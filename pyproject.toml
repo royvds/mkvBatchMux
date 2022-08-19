@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mkvBatchMux"
+version = "0.1"
+authors = [
+  { name="royvds" },
+]
+description = "Batch muxer for MKVToolNix generated commands"
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GPL-3.0 license",
+    "Operating System :: OS Independent",
+]
+
+[project.scripts]
+mkvBatchMux = "mkvbatchmux.cli:main"
+
+[project.urls]
+"Homepage" = "https://github.com/royvds/mkvBatchMux/"
+"Bug Tracker" = "https://github.com/royvds/mkvBatchMux/issues"
