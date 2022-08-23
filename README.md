@@ -23,8 +23,13 @@ optional arguments:
                         minimum of 2 digits and offset +1
 ```
 
+### installess use
+In case you prefer to not install this package through pip, you can directly call the python cli file with
+```console
+$ python -m mkvbatchmux.cli
+```
+
 ## Roadmap
 - Automatic detection of separate attachments folders per mux vs. single attachments folder for all muxes (as replacement of the  current manual --atachments-folder).
-- Mux in xml chapter files
 - File title in metadata (currently removes any titles present)
 - Algorithm to work with inconsistently ordered tracks by detecting tracks using their name, language, etc.

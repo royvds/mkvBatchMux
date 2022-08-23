@@ -14,9 +14,9 @@ def read_mktvoolnix_options():
     while True:
         line = input()
         if line:
+            lines.append(line)
             if (len(lines) == 0 and line != "[") or line == "]":
                 break
-            lines.append(line)
         else:
             break
     try:

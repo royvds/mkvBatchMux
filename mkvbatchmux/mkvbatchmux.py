@@ -114,16 +114,22 @@ class BatchMuxer:
         self.mkvtoolnix_options = mkvtoolnix_options
         self.output_format = output_format
         self.input_files = self.__get_input_files()
+        self.chapter_files = self.__get_chapter_files()
         self.file_count = self.__check_file_count()
         self.output_commands = self.__generate_output_commands()
 
-    def __get_mkvtoolnix_options_value(self, arg: str) -> str:
-        """ Retrieves argument values from the mkvtoolnix options list """
-        index = self.mkvtoolnix_options.index(arg) + 1
-        value = self.mkvtoolnix_options[index]
-        # Some options (such as --no-attachments) do not have a set string value
-        # In those cases we simply return a boolean wether the argument exists or not
-        return value if not value.startswith("--") else arg in self.mkvtoolnix_options
+    def __get_toolnix_option(self, option: str) -> tuple:
+        """ Retrieves option from the mkvtoolnix options list """
+        if option in self.mkvtoolnix_options:
+            index = self.mkvtoolnix_options.index(option)
+            value = self.mkvtoolnix_options[index + 1]
+            if value.startswith("--"):
+                # Some options (such as --no-attachments) do not have a set string
+                # value, resulting in the next line being another --option line.
+                value = ""
+            return (index, option, value)
+        else:
+            return None
 
     def __get_input_files(self):
         """ For every input file in the MKVToolNix command, we
@@ -137,6 +143,19 @@ class BatchMuxer:
                 input_files.append(InputFile(value, index))
             prev_value = value
         return input_files
+
+    def __get_chapter_files(self):
+        chapter_tuple = self.__get_toolnix_option("--chapters")
+        if chapter_tuple is not None:
+            chapter_files = find_adjacent_files(chapter_tuple[2])
+            if len(chapter_files) != len(self.input_files[0].directory_files):
+                raise InputCountException(
+                    len(chapter_files),
+                    len(self.input_files[0].directory_files),
+                    "The number of chapter files does not equal the number of input files")
+            return chapter_files
+        else:
+            return []
 
     def __check_file_count(self) -> int:
         """ Checks if the amount of files in every input directory is the
@@ -201,12 +220,12 @@ class BatchMuxer:
                     # In case the user forgot to provide a file extension, we detect
                     # the output file extension from the original MKVToolNix command.
                     output_extension = os.path.splitext(
-                        self.__get_mkvtoolnix_options_value("--output"))[1]
+                        self.__get_toolnix_option("--output")[2])[1]
                     output = f"{output} ({file_number + 1}){output_extension}"
             return output
         else:
             output_extension = os.path.splitext(
-                self.__get_mkvtoolnix_options_value("--output"))[1]
+                self.__get_toolnix_option("--output")[2])[1]
             return str(file_number + 1).zfill(decimal_count) + output_extension
 
     def __generate_output_commands(self) -> list[str]:
@@ -225,10 +244,15 @@ class BatchMuxer:
             except ValueError:
                 pass
 
-            # Replace original input files to the
-            # files wanted for each mux
+            # Replace original input files
             for input_file in self.input_files:
                 command[input_file.toolnix_index] = input_file.directory_files[i]
+
+            # Replace chapters file
+            if len(self.chapter_files) > 0:
+                print(command)
+                chapter_index = command.index("--chapters")
+                command[chapter_index+1] = self.chapter_files[i]
 
             # Set output file
             output_index = command.index("--output") + 1
@@ -239,7 +263,8 @@ class BatchMuxer:
         return output_commands
 
     def __purge_attachments(self, command: str) -> None:
-        """ Purges all attachments from a MKVToolNix command """
+        """ Purges all attachments that are not embedded in one
+            of the input mkv files from a MKVToolNix command """
         indexes_to_delete = []
         for index, attribute in enumerate(command):
             if attribute.startswith("--attach"):
