@@ -31,5 +31,5 @@ $ python -m mkvbatchmux.cli
 
 ## Roadmap
 - Automatic detection of separate attachments folders per mux vs. single attachments folder for all muxes (as replacement of the  current manual --atachments-folder).
-- File title in metadata (currently removes any titles present)
+- File title in metadata (currently uses title present in first input file)
 - Algorithm to work with inconsistently ordered tracks by detecting tracks using their name, language, etc.

@@ -11,6 +11,7 @@ import subprocess
 # Most sytems don't have the font mime type mappings by default
 # https://www.iana.org/assignments/media-types/media-types.xhtml#font
 mimetypes.add_type('font/collection', '.collection')
+mimetypes.add_type('font/collection', '.ttc')
 mimetypes.add_type('font/otf', '.otf')
 mimetypes.add_type('font/sfnt', '.sfnt')
 mimetypes.add_type('font/ttf', '.ttf')
@@ -106,13 +107,14 @@ class BatchMuxer:
         output_commands (list[str]): List of all final muxing commands
     """
 
-    def __init__(self, mkvtoolnix_options: list, output_format: str = None) -> None:
-        self.load(mkvtoolnix_options, output_format)
+    def __init__(self, mkvtoolnix_options: list, output_format: str = None, skip: int = 0) -> None:
+        self.load(mkvtoolnix_options, output_format, skip)
 
-    def load(self, mkvtoolnix_options: list, output_format: str = None) -> None:
+    def load(self, mkvtoolnix_options: list, output_format: str = None, skip: int = 0) -> None:
         """ Initializer that can be called through __init__ or directly for a new batch mux """
         self.mkvtoolnix_options = mkvtoolnix_options
         self.output_format = output_format
+        self.skip = skip
         self.input_files = self.__get_input_files()
         self.chapter_files = self.__get_chapter_files()
         self.file_count = self.__check_file_count()
@@ -190,7 +192,7 @@ class BatchMuxer:
             # Number directly after %i indicates number length (e.g. %I2 will give 01, %I3 001)
             # Without a number uses automatic detection based on number of files
             # Index number can be done with offset, indicated by +NUMBER, e.g. +2
-            index_matches = re.findall('(%I)([1-9])*(+[0-9][0-9]*)?', output)
+            index_matches = re.findall('(%I)([1-9])*(\+[0-9][0-9]*)?', output)
 
             if output.startswith("%F"):
                 # Using the filename of one of the input files
@@ -250,7 +252,6 @@ class BatchMuxer:
 
             # Replace chapters file
             if len(self.chapter_files) > 0:
-                print(command)
                 chapter_index = command.index("--chapters")
                 command[chapter_index+1] = self.chapter_files[i]
 
@@ -303,5 +304,5 @@ class BatchMuxer:
 
     def mux(self):
         """ Execute all output commands and mux the files """
-        for command in self.output_commands:
+        for command in self.output_commands[self.skip:]:
             subprocess.call(["mkvmerge", *command])
