@@ -26,7 +26,7 @@ def find_adjacent_files(input_file: str) -> list[str]:
     directory = os.path.dirname(input_file)
     extension = os.path.splitext(input_file)[1]
     search_regex = f"{glob.escape(directory)}{os.path.sep}*{extension}"
-    return glob.glob(search_regex)
+    return sorted(glob.glob(search_regex))
 
 
 def list_directory(directory: str) -> list[str]:
